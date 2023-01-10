@@ -1576,10 +1576,10 @@ PyObject* pnio_rec_write_req(PyObject* self, PyObject* args)
 	ret = PNIO_rec_write_req(apphandle, &addr, recordindex, 1, buffersize, buffer);
 	if (ret == PNIO_OK)
 	{
-		free(buffer)
+		free(buffer);
 		Py_RETURN_NONE;
 	}
-	free(buffer)
+	free(buffer);
 	set_error_string(ret);
 	return NULL;
 }
@@ -1638,10 +1638,10 @@ PyObject* pnio_interface_rec_write_req(PyObject* self, PyObject* args)
 	ret = PNIO_interface_rec_write_req(apphandle, &addr, recordindex, 1, buffersize, buffer);
 	if (ret == PNIO_OK)
 	{
-		free(buffer)
+		free(buffer);
 		Py_RETURN_NONE;
 	}
-	free(buffer)
+	free(buffer);
 	set_error_string(ret);
 	return NULL;
 }
@@ -1874,17 +1874,17 @@ PyObject* pnio_ctrl_diag_req(PyObject* self, PyObject* args)
 			break;
 
 		default:
-			free(pDiagReq)
+			free(pDiagReq);
 			PyErr_SetString(PyExc_RuntimeError, "Unknown mode!");
 			return NULL;
 	}
 	ret = PNIO_ctrl_diag_req(apphandle, pDiagReq);
 	if (ret == PNIO_OK)
 	{
-		free(pDiagReq)
+		free(pDiagReq);
 		Py_RETURN_NONE;
 	}
-	free(pDiagReq)
+	free(pDiagReq);
 	set_error_string(ret);
 	return NULL;
 }
