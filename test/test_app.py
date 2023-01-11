@@ -266,7 +266,7 @@ def pnd_test_read_write_io_data():
 			buffer = input("Data: ")
 			buffer = bytearray(int(x.strip(),16) for x in buffer.split(','))
 			locstate = input("Local State (0-GOOD/1-BAD): ")
-			print(pnd.pnio_data_write(int(qaddr), int(length, buffer), int(locstate)))
+			print(pnd.pnio_data_write(int(qaddr), int(length), (buffer), int(locstate)))
 
 #---------------------------------------------------------------------------------
 

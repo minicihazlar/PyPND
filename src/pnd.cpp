@@ -366,11 +366,13 @@ void set_error_string(PNIO_UINT32 error_code)
 			msg = "Setting IP and/or NoS is not allowed";
 			break;
 		}
+#if 0
 		case PNIO_ERR_READ_IP_NOS_NOT_ALLOWED:
 		{
 			msg = "Reading IP and/or NoS is not allowed";
 			break;
 		}
+#endif
 		case PNIO_ERR_INVALID_REMA:
 		{
 			msg = "REMA data is not valid";
@@ -1561,21 +1563,19 @@ PyObject* pnio_rec_write_req(PyObject* self, PyObject* args)
 {
 	PNIO_UINT32 ret;
 	PNIO_ADDR addr;
-	PyObject *param;
+	PyObject *bufferparam;
 	PNIO_UINT32 logaddr;
 	PNIO_UINT32 recordindex;
 	PNIO_UINT32 buffersize;
 	PNIO_UINT8 *buffer;
 
-	if (!PyArg_ParseTuple(args, "IIIO", &logaddr, &recordindex, &buffersize, &param))
+	if (!PyArg_ParseTuple(args, "IIIY", &logaddr, &recordindex, &buffersize, &bufferparam))
 	{
 		return NULL;
 	}
 	buffer = (PNIO_UINT8 *)calloc(1, buffersize);
-	if (!PyArg_ParseTuple(param, "y#", &buffer, &buffersize))
-	{
-		return NULL;
-	}
+
+	memcpy(buffer, (PNIO_UINT8 *)PyByteArray_AsString(bufferparam), buffersize);
 
 	addr.AddrType = PNIO_ADDR_LOG;
 	addr.IODataType = PNIO_IO_IN;
@@ -1583,8 +1583,10 @@ PyObject* pnio_rec_write_req(PyObject* self, PyObject* args)
 	ret = PNIO_rec_write_req(apphandle, &addr, recordindex, 1, buffersize, buffer);
 	if (ret == PNIO_OK)
 	{
+		free(buffer);
 		Py_RETURN_NONE;
 	}
+	free(buffer);
 	set_error_string(ret);
 	return NULL;
 }
@@ -1623,21 +1625,19 @@ PyObject* pnio_interface_rec_write_req(PyObject* self, PyObject* args)
 {
 	PNIO_UINT32 ret;
 	PNIO_ADDR addr;
-	PyObject *param;
+	PyObject *bufferparam;
 	PNIO_UINT32 logaddr;
 	PNIO_UINT32 recordindex;
 	PNIO_UINT32 buffersize;
 	PNIO_UINT8 *buffer;
 
-	if (!PyArg_ParseTuple(args, "IIIO", &logaddr, &recordindex, &buffersize, &param))
+	if (!PyArg_ParseTuple(args, "IIIO", &logaddr, &recordindex, &buffersize, &bufferparam))
 	{
 		return NULL;
 	}
 	buffer = (PNIO_UINT8 *)calloc(1, buffersize);
-	if (!PyArg_ParseTuple(param, "y#", &buffer, &buffersize))
-	{
-		return NULL;
-	}
+
+	memcpy(buffer, (PNIO_UINT8 *)PyByteArray_AsString(bufferparam), buffersize);
 
 	addr.AddrType = PNIO_ADDR_LOG;
 	addr.IODataType = PNIO_IO_IN;
@@ -1645,12 +1645,14 @@ PyObject* pnio_interface_rec_write_req(PyObject* self, PyObject* args)
 	ret = PNIO_interface_rec_write_req(apphandle, &addr, recordindex, 1, buffersize, buffer);
 	if (ret == PNIO_OK)
 	{
+		free(buffer);
 		Py_RETURN_NONE;
 	}
+	free(buffer);
 	set_error_string(ret);
 	return NULL;
 }
-
+#if 0
 /*--------------------------------------------------------------------*/
 
 extern "C"
@@ -1726,7 +1728,7 @@ PyObject* pnio_interface_read_eng_params(PyObject* self, PyObject* args)
 	set_error_string(ret);
 	return NULL;
 }
-
+#endif
 /*--------------------------------------------------------------------*/
 
 extern "C"
@@ -1796,7 +1798,7 @@ PyObject* pnio_data_write(PyObject* self, PyObject* args)
 	{
 		PNIO_UINT32 logaddr;
 
-		if (!PyArg_ParseTuple(args, "IIOI", &logaddr, &length, &bufferparam, &locstate))
+		if (!PyArg_ParseTuple(args, "IIYI", &logaddr, &length, &bufferparam, &locstate))
 		{
 			return NULL;
 		}
@@ -1820,11 +1822,9 @@ PyObject* pnio_data_write(PyObject* self, PyObject* args)
 		addr.u.Geo.Subslot = subslot;
 	}
 	buffer = (PNIO_UINT8 *)calloc(1, length);
-	if (!PyArg_ParseTuple(args, "y#", &buffer, &length))
-	{
-		free(buffer);
-		return NULL;
-	}
+
+	memcpy(buffer, (PNIO_UINT8 *)PyByteArray_AsString(bufferparam), length);
+	
 	ret = PNIO_data_write(apphandle, &addr, length, buffer, (PNIO_IOXS *)&locstate, (PNIO_IOXS *)&remstate);
 	if (ret == PNIO_OK)
 	{
@@ -1957,14 +1957,17 @@ PyObject* pnio_ctrl_diag_req(PyObject* self, PyObject* args)
 			break;
 
 		default:
+			free(pDiagReq);
 			PyErr_SetString(PyExc_RuntimeError, "Unknown mode!");
 			return NULL;
 	}
 	ret = PNIO_ctrl_diag_req(apphandle, pDiagReq);
 	if (ret == PNIO_OK)
 	{
+		free(pDiagReq);
 		Py_RETURN_NONE;
 	}
+	free(pDiagReq);
 	set_error_string(ret);
 	return NULL;
 }
@@ -1995,7 +1998,9 @@ static PyMethodDef pndMethods[] = {
 	{"pnio_interface_set_ip_and_nos", (PyCFunction)pnio_interface_set_ip_and_nos, METH_VARARGS, "Set NoS (name of station) and/or IP suite"},
 	{"pnio_interface_rec_read_req", (PyCFunction)pnio_interface_rec_read_req, METH_VARARGS, "Record read function for interface, response is through callback"},
 	{"pnio_interface_rec_write_req", (PyCFunction)pnio_interface_rec_write_req,	METH_VARARGS, "Record write function for interface, response is through callback"},
+#if 0
 	{"pnio_interface_read_eng_params", (PyCFunction)pnio_interface_read_eng_params, METH_VARARGS, "Read engineering parameters like NoS and IP Suite info for relected devices"},
+#endif
 	{"pnio_ctrl_diag_req", (PyCFunction)pnio_ctrl_diag_req, METH_VARARGS, "Request diagnostic information"},
 	{"pnio_data_read", (PyCFunction)pnio_data_read, METH_VARARGS, "Read IO data function"},
 	{"pnio_data_write", (PyCFunction)pnio_data_write, METH_VARARGS, "Write IO data function"},
