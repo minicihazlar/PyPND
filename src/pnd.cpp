@@ -366,6 +366,13 @@ void set_error_string(PNIO_UINT32 error_code)
 			msg = "Setting IP and/or NoS is not allowed";
 			break;
 		}
+#if 0
+		case PNIO_ERR_READ_IP_NOS_NOT_ALLOWED:
+		{
+			msg = "Reading IP and/or NoS is not allowed";
+			break;
+		}
+#endif
 		case PNIO_ERR_INVALID_REMA:
 		{
 			msg = "REMA data is not valid";
@@ -1645,7 +1652,83 @@ PyObject* pnio_interface_rec_write_req(PyObject* self, PyObject* args)
 	set_error_string(ret);
 	return NULL;
 }
+#if 0
+/*--------------------------------------------------------------------*/
 
+extern "C"
+PyObject* pnio_interface_read_eng_params(PyObject* self, PyObject* args)
+{
+	PNIO_UINT32 ret = 0;
+	PNIO_ENG_REQ EngReq;
+	int mode;
+	PNIO_UINT32 laddr;
+	PNIO_UINT8 *pEngBuffer = PNIO_NULL;
+	PNIO_UINT32  BufferLen = 0;
+
+	if (!PyArg_ParseTuple(args, "ii", &mode, &laddr))
+	{
+		return NULL;
+	}
+	EngReq.DeviceMode = PNIO_DEVICE_MODE;
+	EngReq.EngMode = ENG_TYPE_XML;
+	EngReq.DeCentCnt = 1;
+	EngReq.DeCentList = (PNIO_ADDR *)calloc(1, EngReq.DeCentCnt * sizeof(PNIO_ADDR));
+	EngReq.DeCentList->u.Addr = laddr;
+	EngReq.DeCentList->AddrType = PNIO_ADDR_LOG;
+
+	if (mode == PNIO_ENG_IP_PARAM)
+	{
+		EngReq.EngParam = PNIO_ENG_IP_PARAM;
+		BufferLen = sizeof(PND_ENG_TYPE_IP);
+	}
+	else if (mode == PNIO_ENG_NOS_PARAM)
+	{
+		EngReq.EngParam = PNIO_ENG_NOS_PARAM;
+		BufferLen = sizeof(PND_ENG_TYPE_NOS);
+	}
+	else
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Unknown mode!");
+		return NULL;
+	}
+	pEngBuffer = (PNIO_UINT8*)calloc(1, BufferLen);
+	if (pEngBuffer == NULL)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Allocation error!");
+		return NULL;
+	}
+	ret = PNIO_interface_read_eng_params(ifchandle, &EngReq, &BufferLen, pEngBuffer);
+	if (ret == PNIO_OK)
+	{
+		if (EngReq.EngParam == PNIO_ENG_NOS_PARAM)
+		{
+			return Py_BuildValue("s", ((PND_ENG_TYPE_NOS *)pEngBuffer)->Nos);
+		}
+		else
+		{
+			char ip[32];
+			char netmask[32];
+			char gateway[32];
+
+			sprintf(ip, "%hhu.%hhu.%hhu.%hhu", ((PND_ENG_TYPE_IP *)pEngBuffer)->IpAddress[0],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->IpAddress[1],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->IpAddress[2],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->IpAddress[3]);
+			sprintf(netmask, "%hhu.%hhu.%hhu.%hhu", ((PND_ENG_TYPE_IP *)pEngBuffer)->NetMask[0],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->NetMask[1],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->NetMask[2],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->NetMask[3]);
+			sprintf(gateway, "%hhu.%hhu.%hhu.%hhu", ((PND_ENG_TYPE_IP *)pEngBuffer)->Gateway[0],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->Gateway[1],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->Gateway[2],
+				((PND_ENG_TYPE_IP *)pEngBuffer)->Gateway[3]);
+			return Py_BuildValue("sss", ip, netmask, gateway);
+		}
+	}
+	set_error_string(ret);
+	return NULL;
+}
+#endif
 /*--------------------------------------------------------------------*/
 
 extern "C"
@@ -1915,6 +1998,9 @@ static PyMethodDef pndMethods[] = {
 	{"pnio_interface_set_ip_and_nos", (PyCFunction)pnio_interface_set_ip_and_nos, METH_VARARGS, "Set NoS (name of station) and/or IP suite"},
 	{"pnio_interface_rec_read_req", (PyCFunction)pnio_interface_rec_read_req, METH_VARARGS, "Record read function for interface, response is through callback"},
 	{"pnio_interface_rec_write_req", (PyCFunction)pnio_interface_rec_write_req,	METH_VARARGS, "Record write function for interface, response is through callback"},
+#if 0
+	{"pnio_interface_read_eng_params", (PyCFunction)pnio_interface_read_eng_params, METH_VARARGS, "Read engineering parameters like NoS and IP Suite info for relected devices"},
+#endif
 	{"pnio_ctrl_diag_req", (PyCFunction)pnio_ctrl_diag_req, METH_VARARGS, "Request diagnostic information"},
 	{"pnio_data_read", (PyCFunction)pnio_data_read, METH_VARARGS, "Read IO data function"},
 	{"pnio_data_write", (PyCFunction)pnio_data_write, METH_VARARGS, "Write IO data function"},
