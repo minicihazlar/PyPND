@@ -10,9 +10,9 @@ static PNIO_UINT32 apphandle = 0xFFFF;
 static PNIO_UINT32 ifchandle = 0xFFFF;
 static PNIO_UINT32 rolestore = 1;
 static PyObject* callbackfunc[21] = { NULL }; // Yes you are right, total of callback functions should be 20
-       			                								  // but as the PNIO_CBE_TYPE values start from 1, instead of
-											                        // decrementing 1 in each array indexing, having 1 more in the
-											                        // array is a much better comprimise, isn't it?
+       	                                      // but as the PNIO_CBE_TYPE values start from 1, instead of
+					      // decrementing 1 in each array indexing, having 1 more in the
+					      // array is a much better comprimise, isn't it?
 /*--------------------------------------------------------------------*/
 
 void set_error_string(PNIO_UINT32 error_code)
